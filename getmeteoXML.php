@@ -1,4 +1,18 @@
 <?php
+function forecastAsXHTML($date,$desc,$icon,$tmax,$tmin) {
+	$theXHTML = new SimpleXMLElement("<div/>");
+	$table = $theXHTML->addChild("table");
+	$table->addChild("tr")->addChild("td",$date)->addAttribute("colspan",2);
+	$table->addChild("tr")->addChild("td",$desc)->addAttribute("colspan",2);
+	$rowaux = $table->addChild("tr");
+	$tdaux =  $rowaux->addChild("td");
+	$tdaux->addAttribute("rowspan",2);
+	$tdaux->addChild("img")->addAttribute("src",$icon);
+	$rowaux->addChild("td",$tmin);
+	$table->addChild("tr")->addChild("td",$tmax);
+	
+	return $theXHTML->asXML();
+}
 function forecastAsHTML($date,$desc,$icon,$tmax,$tmin) {
 	$theHTML = "";
 	$theHTML .= "<div>";
@@ -59,33 +73,36 @@ function forecastAsHTML($date,$desc,$icon,$tmax,$tmin) {
 		$p_q = "q=".urlencode($_GET['location']);
 		$p_nd = "num_of_days=5";
 		$p_key = "key=jx6a4hxmgej238dw8x4p8vvc";
-		$p_format = "format=json";
+		$p_format = "format=xml";
 		
 		$callURL = $coreURL.$p_q.$sep.$p_nd.$sep.$p_key.$sep.$p_format;
 		echo "<hr/>";
 		echo $callURL;
 		echo "<hr/>";
 		
-		$forecastJSON = file_get_contents($callURL);
+		$forecastXML = file_get_contents($callURL);
 		
-		$forecastPHP = json_decode($forecastJSON);
+		$forecastPHP = simplexml_load_string($forecastXML,null,LIBXML_NOCDATA);
+		
+		//echo $forecastXML;
+		
 		echo "<hr/>";
-		echo $forecastPHP->data->current_condition[0]->temp_C;
+		echo "xxx" . $forecastPHP->current_condition[0]->temp_C;
 		echo "<hr/>";
 		
 		echo "<hr/>";
-		$forecastArray = $forecastPHP->data->weather;
+		$forecastArray = $forecastPHP->weather;
 		foreach($forecastArray as $forecastDay) {
 			$date = $forecastDay->date;
 			$tmin = $forecastDay->tempMinC;
 			$tmax = $forecastDay->tempMaxC;
-			$desc = $forecastDay->weatherDesc[0]->value;
-			$icon = $forecastDay->weatherIconUrl[0]->value;
-			echo forecastAsHTML($date, $desc, $icon, $tmax, $tmin);
+			$desc = $forecastDay->weatherDesc[0];
+			$icon = $forecastDay->weatherIconUrl[0];
+			//echo forecastAsHTML($date, $desc, $icon, $tmax, $tmin);
+			echo forecastAsXHTML($date, $desc, $icon, $tmax, $tmin);
+			
 		}
-		
-		// echo forecastAsHTML("14-10-2014", "sunny", "http://cdn.worldweatheronline.net/images/wsymbols01_png_64/wsymbol_0001_sunny.png", "33", "12");
-		
+				
 		echo "<hr/>";
 		?>
 	</body>
